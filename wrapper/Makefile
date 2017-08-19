@@ -38,7 +38,7 @@ else
 
 ifeq (,$(findstring Windows, $(PLATFORM)))
 ifeq (,$(findstring OpenBSD, $(PLATFORM)))
-  override LDFLAGS+=-lrt
+  override LDFLAGS+=-L/usr/lib/gcc/x86_64-redhat-linux/7/ -lrt
 endif
 endif
 

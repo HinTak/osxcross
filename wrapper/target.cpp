@@ -139,8 +139,7 @@ bool Target::getSDKPath(std::string &path) const {
   } else {
     OSVersion SDKVer = getSDKOSNum();
 
-    path = execpath;
-    path += "/../SDK/MacOSX";
+    path = "/usr/darwinx/SDKs/MacOSX";
     path += SDKVer.shortStr();
 
     if (SDKVer <= OSVersion(10, 4))

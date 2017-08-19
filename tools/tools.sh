@@ -8,7 +8,7 @@ TARBALL_DIR=$BASE_DIR/tarballs
 BUILD_DIR=$BASE_DIR/build
 TARGET_DIR=$BASE_DIR/target
 PATCH_DIR=$BASE_DIR/patches
-SDK_DIR=$TARGET_DIR/SDK
+SDK_DIR=/usr/darwinx/SDKs/
 
 PLATFORM=$(uname -s)
 ARCH=$(uname -m)

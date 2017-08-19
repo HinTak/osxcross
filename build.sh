@@ -10,56 +10,8 @@ pushd "${0%/*}" &>/dev/null
 
 source tools/tools.sh
 
-# find sdk version to use
-function guess_sdk_version()
-{
-  tmp1=
-  tmp2=
-  tmp3=
-  file=
-  sdk=
-  guess_sdk_version_result=
-  sdkcount=$(find -L tarballs/ -type f | grep MacOSX | wc -l)
-  if [ $sdkcount -eq 0 ]; then
-    echo no SDK found in 'tarballs/'. please see README.md
-    exit 1
-  elif [ $sdkcount -gt 1 ]; then
-    sdks=$(find -L tarballs/ -type f | grep MacOSX)
-    for sdk in $sdks; do echo $sdk; done
-    echo 'more than one MacOSX SDK tarball found. please set'
-    echo 'SDK_VERSION environment variable for the one you want'
-    echo '(for example: SDK_VERSION=10.x [OSX_VERSION_MIN=10.x] ./build.sh)'
-    exit 1
-  else
-    sdk=$(find -L tarballs/ -type f | grep MacOSX)
-    tmp2=$(echo ${sdk/bz2/} | $SED s/[^0-9.]//g)
-    tmp3=$(echo $tmp2 | $SED s/\\\.*$//g)
-    guess_sdk_version_result=$tmp3
-    echo 'found SDK version' $guess_sdk_version_result 'at tarballs/'$(basename $sdk)
-  fi
-  if [ $guess_sdk_version_result ]; then
-    if [ $guess_sdk_version_result = 10.4 ]; then
-      guess_sdk_version_result=10.4u
-    fi
-  fi
-  export guess_sdk_version_result
-}
-
-# make sure there is actually a file with the given SDK_VERSION
-function verify_sdk_version()
-{
-  sdkv=$1
-  for file in tarballs/*; do
-    if [ -f "$file" ] && [ $(echo $file | grep OSX.*$sdkv) ]; then
-      echo "verified at "$file
-      sdk=$file
-    fi
-  done
-  if [ ! $sdk ] ; then
-    echo cant find SDK for OSX $sdkv in tarballs. exiting
-    exit
-  fi
-}
+SDK_VERSION=10.5
+OSX_VERSION_MIN=10.5
 
 if [ $SDK_VERSION ]; then
   echo 'SDK VERSION set in environment variable:' $SDK_VERSION
@@ -68,7 +20,6 @@ else
   guess_sdk_version
   SDK_VERSION=$guess_sdk_version_result
 fi
-verify_sdk_version $SDK_VERSION
 
 # Minimum targeted OS X version
 # Must be <= SDK_VERSION
@@ -117,7 +68,6 @@ export PATH=$TARGET_DIR/bin:$PATH
 
 mkdir -p $BUILD_DIR
 mkdir -p $TARGET_DIR
-mkdir -p $SDK_DIR
 
 require $CC
 require $CXX
@@ -156,6 +106,7 @@ pushd .. &>/dev/null
 popd &>/dev/null
 patch -p0 < $PATCH_DIR/cctools-ld64-1.patch
 patch -p0 < $PATCH_DIR/cctools-ld64-2.patch
+patch -p0 < $PATCH_DIR/cctools-fedora-fc26.patch
 echo ""
 CONFFLAGS="--prefix=$TARGET_DIR --target=x86_64-apple-$TARGET "
 [ -z "$USE_CLANG_AS" ] && CONFFLAGS+="--disable-clang-as "
@@ -191,37 +142,6 @@ create_symlink $BASE_DIR/tools/osxcross-macports osxcross-mp
 create_symlink $BASE_DIR/tools/osxcross-macports omp
 popd &>/dev/null
 
-SDK=$(ls $TARBALL_DIR/MacOSX$SDK_VERSION*)
-
-# XAR
-if [[ $SDK == *.pkg ]]; then
-
-set +e
-which xar &>/dev/null
-NEED_XAR=$?
-set -e
-
-if [ $NEED_XAR -ne 0 ]; then
-
-extract $TARBALL_DIR/xar*.tar.gz 2
-
-pushd xar* &>/dev/null
-if [ $PLATFORM == "NetBSD" ]; then
-  patch -p0 -l < $PATCH_DIR/xar-netbsd.patch
-fi
-patch -p0 < $PATCH_DIR/xar-ext2.patch
-# https://github.com/tpoechtrager/osxcross/issues/109
-ac_cv_lib_crypto_OpenSSL_add_all_ciphers=yes \
-CFLAGS+=" -w" \
-  ./configure --prefix=$TARGET_DIR
-$MAKE -j$JOBS
-$MAKE install -j$JOBS
-popd &>/dev/null
-
-fi
-fi
-# XAR END
-
 if [ ! -f "have_cctools_${CCTOOLS_REVHASH}_$TARGET_${CCTOOLS_PATCH_REV}" ]; then
 
 function check_cctools()
@@ -243,46 +163,7 @@ echo ""
 
 fi # HAVE_CCTOOLS
 
-set +e
-ls $TARBALL_DIR/MacOSX$SDK_VERSION* &>/dev/null
-while [ $? -ne 0 ]
-do
-  echo ""
-  echo "Get the MacOSX$SDK_VERSION SDK and move it into $TARBALL_DIR"
-  echo "(see README for SDK download links)"
-  echo ""
-  echo "You can press ctrl-c to break the build process,"
-  echo "if you restart ./build.sh then we will continue from here"
-  echo ""
-  if [ -z "$UNATTENDED" ]; then
-    read -p "Press enter to continue"
-  else
-    exit 1
-  fi
-  ls $TARBALL_DIR/MacOSX$SDK_VERSION* &>/dev/null
-done
-set -e
-
-extract $SDK 1 1
-
-rm -rf $SDK_DIR/MacOSX$SDK_VERSION* 2>/dev/null
-
-if [ "$(ls -l SDKs/*$SDK_VERSION* 2>/dev/null | wc -l | tr -d ' ')" != "0" ]; then
-  mv -f SDKs/*$SDK_VERSION* $SDK_DIR
-else
-  mv -f *OSX*$SDK_VERSION*sdk* $SDK_DIR
-fi
-
-pushd $SDK_DIR/MacOSX$SDK_VERSION.sdk &>/dev/null
-set +e
-create_symlink \
-  $SDK_DIR/MacOSX$SDK_VERSION.sdk/System/Library/Frameworks/Kernel.framework/Versions/A/Headers/std*.h \
-  usr/include 2>/dev/null
-[ ! -f "usr/include/float.h" ] && cp -f $BASE_DIR/oclang/quirks/float.h usr/include
-[ $PLATFORM == "FreeBSD" ] && cp -f $BASE_DIR/oclang/quirks/tgmath.h usr/include
-set -e
-popd &>/dev/null
-
+# popd $BUILD_DIR
 popd &>/dev/null
 
 OSXCROSS_CONF="$TARGET_DIR/bin/osxcross-conf"
@@ -327,8 +208,8 @@ unset MACOSX_DEPLOYMENT_TARGET
 test_compiler o32-clang $BASE_DIR/oclang/test.c
 test_compiler o64-clang $BASE_DIR/oclang/test.c
 
-test_compiler o32-clang++ $BASE_DIR/oclang/test.cpp
-test_compiler o64-clang++ $BASE_DIR/oclang/test.cpp
+#test_compiler o32-clang++ $BASE_DIR/oclang/test.cpp
+#test_compiler o64-clang++ $BASE_DIR/oclang/test.cpp
 
 if [ $(osxcross-cmp ${SDK_VERSION/u/} ">=" 10.7) -eq 1 ]; then
   if [ ! -d "$SDK_DIR/MacOSX$SDK_VERSION.sdk/usr/include/c++/v1" ]; then

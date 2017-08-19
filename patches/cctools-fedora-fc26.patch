@@ -1,0 +1,27 @@
+--- configure.ac.orig	2017-02-05 08:08:24.000000000 +0000
++++ configure.ac	2017-08-18 23:25:35.973955793 +0100
+@@ -28,8 +28,8 @@
+ 
+ if test "x$build" = "x$host"; then
+   CFLAGS="$CFLAGS -isystem /usr/local/include -isystem /usr/pkg/include"
+-  CXXFLAGS="$CXXFLAGS -isystem /usr/local/include -isystem /usr/pkg/include"
+-  LDFLAGS="$LDFLAGS -L/usr/local/lib -L/usr/pkg/lib"
++  CXXFLAGS="$CXXFLAGS -isystem /usr/local/include -isystem /usr/pkg/include -isystem /usr/include/c++/7/x86_64-redhat-linux/"
++  LDFLAGS="$LDFLAGS -L/usr/local/lib -L/usr/pkg/lib -L/usr/lib/gcc/x86_64-redhat-linux/7"
+ fi
+ 
+ CWARNINGS=""
+--- configure.orig	2017-08-18 23:32:44.383811413 +0100
++++ configure	2017-08-18 23:25:45.932045414 +0100
+@@ -2599,8 +2599,8 @@
+ CXXFLAGS="$CXXFLAGS -std=c++0x"
+ 
+ if test "x$build" = "x$host"; then
+   CFLAGS="$CFLAGS -isystem /usr/local/include -isystem /usr/pkg/include"
+-  CXXFLAGS="$CXXFLAGS -isystem /usr/local/include -isystem /usr/pkg/include"
+-  LDFLAGS="$LDFLAGS -L/usr/local/lib -L/usr/pkg/lib"
++  CXXFLAGS="$CXXFLAGS -isystem /usr/local/include -isystem /usr/pkg/include -isystem /usr/include/c++/7/x86_64-redhat-linux/"
++  LDFLAGS="$LDFLAGS -L/usr/local/lib -L/usr/pkg/lib -L/usr/lib/gcc/x86_64-redhat-linux/7"
+ fi
+ 
+ CWARNINGS=""
