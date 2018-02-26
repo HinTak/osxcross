@@ -102,7 +102,7 @@ if [ -n "$BWCXX" ]; then
 fi
 
 if [ "$PLATFORM" == "Linux" ]; then
-  FLAGS+="-isystem quirks/include -isystem /usr/include/c++/7/x86_64-redhat-linux/"
+  FLAGS+="-isystem quirks/include "
 fi
 
 function compile_wrapper()

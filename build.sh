@@ -106,7 +106,6 @@ pushd .. &>/dev/null
 popd &>/dev/null
 patch -p0 < $PATCH_DIR/cctools-ld64-1.patch
 patch -p0 < $PATCH_DIR/cctools-ld64-2.patch
-patch -p0 < $PATCH_DIR/cctools-fedora-fc26.patch
 echo ""
 CONFFLAGS="--prefix=$TARGET_DIR --target=x86_64-apple-$TARGET "
 [ -z "$USE_CLANG_AS" ] && CONFFLAGS+="--disable-clang-as "
@@ -208,8 +207,8 @@ unset MACOSX_DEPLOYMENT_TARGET
 test_compiler o32-clang $BASE_DIR/oclang/test.c
 test_compiler o64-clang $BASE_DIR/oclang/test.c
 
-#test_compiler o32-clang++ $BASE_DIR/oclang/test.cpp
-#test_compiler o64-clang++ $BASE_DIR/oclang/test.cpp
+test_compiler o32-clang++ $BASE_DIR/oclang/test.cpp -L/usr/darwinx/SDKs/MacOSX10.5.sdk/usr/i686-apple-darwin10/lib/
+test_compiler o64-clang++ $BASE_DIR/oclang/test.cpp -L/usr/darwinx/SDKs/MacOSX10.5.sdk/usr/x86_64-apple-darwin10/lib/
 
 if [ $(osxcross-cmp ${SDK_VERSION/u/} ">=" 10.7) -eq 1 ]; then
   if [ ! -d "$SDK_DIR/MacOSX$SDK_VERSION.sdk/usr/include/c++/v1" ]; then
